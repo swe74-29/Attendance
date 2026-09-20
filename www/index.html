@@ -225,8 +225,9 @@ var classes=function(n){return n+' class'+(n===1?'':'es');};
 
 /* ---------- state ---------- */
 function blankSem(name,status){return {id:uid(),name:name,status:status||'upcoming',mode:'each',target:75,start:'',end:'',subjects:[],tt:{},extras:[],holidays:[],rec:{},baseDate:''};}
-function counted(s,date){return !!s.baseDate&&date<=s.baseDate;}
-function fixSem(s){var b=blankSem(s.name||'Semester');for(var k in b){if(s[k]===undefined)s[k]=b[k];}return s;}
+function counted(x,date){return !!(x&&x.baseDate)&&date<=x.baseDate;}
+function stampBase(x){x.baseDate=((+x.baseA||0)||(+x.baseH||0))?(x.baseDate||today()):'';}
+function fixSem(s){var b=blankSem(s.name||'Semester');for(var k in b){if(s[k]===undefined)s[k]=b[k];}s.subjects.forEach(function(x){if(x.baseDate===undefined)x.baseDate=((+x.baseA||0)||(+x.baseH||0))?(s.baseDate||''):'';});return s;}
 function load(){
   try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&Array.isArray(o.sems)){o.sems.forEach(fixSem);return o;}}}catch(e){}
   return {cur:null,sems:[]};
@@ -244,7 +245,7 @@ function semStats(s){
   s.subjects.forEach(function(x){var h=+x.baseH||0;H[x.id]=h;A[x.id]=Math.min(+x.baseA||0,h);});
   for(var k in s.rec){
     var st=s.rec[k];if(st==='C')continue;
-    var kp=k.split('|');if(counted(s,kp[0]))continue;var sid=kp[1];if(!(sid in A))continue;
+    var kp=k.split('|'),sub0=subOf(s,kp[1]);if(!sub0||counted(sub0,kp[0]))continue;var sid=kp[1];
     H[sid]++;if(st==='P')A[sid]++;
   }
   return {A:A,H:H};
@@ -262,7 +263,7 @@ function remaining(s,from){
   if(!s.end)return null;
   var R={};s.subjects.forEach(function(x){R[x.id]=0;});
   var d=from,g=0;
-  while(d<=s.end&&g++<800){slotsOn(s,d).forEach(function(sl){if(!(sl.key in s.rec)&&!counted(s,d))R[sl.sub]++;});d=addDays(d,1);}
+  while(d<=s.end&&g++<800){slotsOn(s,d).forEach(function(sl){if(!(sl.key in s.rec)&&!counted(subOf(s,sl.sub),d))R[sl.sub]++;});d=addDays(d,1);}
   return R;
 }
 function calc(A,H,R,t){
@@ -290,11 +291,11 @@ function planDays(s,n,planned){
   var days=[],d=today();
   for(var i=0;i<n;i++,d=addDays(d,1)){
     if(s.end&&d>s.end)break;
-    var slots=slotsOn(s,d).filter(function(sl){return !(sl.key in s.rec)&&!counted(s,d);});
+    var slots=slotsOn(s,d).filter(function(sl){return !(sl.key in s.rec)&&!counted(subOf(s,sl.sub),d);});
     var cnt={},xc={};
     slots.forEach(function(sl){cnt[sl.sub]=(cnt[sl.sub]||0)+1;if(sl.extra)xc[sl.sub]=(xc[sl.sub]||0)+1;});
     var N=slots.length;
-    var row={date:d,N:N,cnt:cnt,xc:xc,holiday:s.holidays.indexOf(d)>=0,planned:planned.has(d),counted:counted(s,d)};
+    var row={date:d,N:N,cnt:cnt,xc:xc,holiday:s.holidays.indexOf(d)>=0,planned:planned.has(d),had:slotsOn(s,d).length>0};
     if(N===0){row.status='none';days.push(row);continue;}
     if(s.mode==='total'){
       var tA=sum(a),tH=sum(h);
@@ -399,7 +400,6 @@ function vMark(s){
   var html='<h1 class="pt">Attendance</h1>'+banner(s)+
     '<div class="datebar"><button class="btn" data-act="dprev" aria-label="Previous day">‹</button><input type="date" data-f="date" value="'+d+'" aria-label="Date"><button class="btn" data-act="dnext" aria-label="Next day">›</button><button class="btn" data-act="dtoday">Today</button></div>'+
     '<p class="hint" style="margin-bottom:12px"><b>'+fmtDay(d)+'</b> '+(hol?'<span class="pill none">Holiday</span>':'')+'</p>';
-  if(counted(s,d))html+='<div class="banner">This date is already included in your starting numbers, so marking it here will not change your totals.</div>';
   if(!s.subjects.length)return html+empty('No subjects yet','Add subjects in Setup first.','Add subjects','gosetup');
   if(slots.length||hol){
     html+='<div class="acts" style="margin:0 0 4px">'+(slots.length?'<button class="btn" data-act="allP">All present</button><button class="btn" data-act="allA">All absent</button>':'')+'<button class="btn" data-act="holiday">'+(hol?'Remove holiday':'Mark day as holiday')+'</button></div>';
@@ -409,7 +409,7 @@ function vMark(s){
   var L={P:'Present',A:'Absent',C:'Cancelled'};
   s.subjects.filter(function(x){return by[x.id];}).forEach(function(x){
     var ri=0;
-    html+='<section class="card slotgroup"><h3>'+esc(x.name)+'</h3>'+by[x.id].map(function(sl){
+    html+='<section class="card slotgroup"><h3>'+esc(x.name)+'</h3>'+(counted(x,d)?'<p class="tiny">Already included in the starting numbers, so marks on this date are not added again.</p>':'')+by[x.id].map(function(sl){
       var st=s.rec[sl.key];
       return '<div class="slot"><div class="sl">'+(sl.extra?'Extra class<button class="lnk" data-act="delx" data-id="'+sl.xid+'">Remove</button>':'Class '+(++ri))+'</div><div class="seg">'+
         ['P','A','C'].map(function(c){return '<button class="'+c+'" data-act="mark" data-key="'+sl.key+'" data-st="'+c+'" aria-pressed="'+(st===c)+'">'+L[c]+'</button>';}).join('')+'</div></div>';
@@ -433,7 +433,7 @@ function vPlan(s){
   days.forEach(function(d){
     var wd=DN[parse(d.date).getDay()],dm=parse(d.date).getDate()+' '+MN[parse(d.date).getMonth()];
     if(d.status==='none'){
-      html+='<div class="day none"><div><div class="dw">'+wd+'</div><div class="dd">'+dm+'</div></div><div class="dtx">'+(d.holiday?'Holiday':d.counted?'Already in your starting numbers':'No classes')+'</div><span></span></div>';
+      html+='<div class="day none"><div><div class="dw">'+wd+'</div><div class="dd">'+dm+'</div></div><div class="dtx">'+(d.holiday?'Holiday':d.had?'Already recorded':'No classes')+'</div><span></span></div>';
       return;
     }
     var chips=Object.keys(d.cnt).map(function(id){var x=subOf(s,id);return '<span class="chip">'+esc(x.name)+' ×'+d.cnt[id]+(d.xc[id]?' ('+d.xc[id]+' extra)':'')+'</span>';}).join('');
@@ -454,8 +454,7 @@ function vSetup(s){
   '<label class="opt"><input type="radio" name="mode" data-f="semMode" value="each"'+(tot?'':' checked')+'><span><b>Each subject separately</b><small>Every subject needs its own minimum. Give a subject its own % below, or leave it blank to use the default.</small></span></label>'+
   '<label class="opt"><input type="radio" name="mode" data-f="semMode" value="total"'+(tot?' checked':'')+'><span><b>One combined percentage</b><small>All classes of all subjects are pooled and checked against a single minimum.</small></span></label></fieldset>'+
   '<label style="margin-top:14px">'+(tot?'Minimum overall attendance (%)':'Default minimum attendance (%)')+'<input type="number" min="1" max="100" data-f="semTarget" value="'+s.target+'"></label></section>'+
-  '<h2>Subjects</h2><p class="hint" style="margin-bottom:12px">Add as many as you need. If you are starting mid-semester, fill in how many classes were held and attended so far.</p>'+
-  '<section class="card" style="margin-bottom:12px"><label>Starting numbers are counted up to and including<input type="date" data-f="semBaseDate" value="'+(s.baseDate||'')+'"></label><p class="hint" style="margin-top:8px">Set this to the date your "attended so far" and "held so far" numbers are from, for example the day you copied them from your college portal. Classes you mark on that date or earlier are not added again. Leave it blank if those numbers are from before you marked anything here.</p></section>'+
+  '<h2>Subjects</h2><p class="hint" style="margin-bottom:12px">Add as many as you need. If you are starting mid-semester, fill in how many classes were held and attended so far. Classes you mark on the day you enter these numbers are treated as already included.</p>'+
   '<div class="addrow"><input id="newSub" placeholder="Subject name, e.g. Data Structures" data-enter="addSub" aria-label="New subject name"><button class="btn pri" data-act="addSub">Add subject</button></div>';
   if(!s.subjects.length)html+=empty('No subjects yet','Type a subject name above and press Add subject.');
   s.subjects.forEach(function(x){
@@ -664,15 +663,14 @@ document.addEventListener('change',function(e){
     case 'switchSem':S.cur=el.value;render();return;
     case 'date':ui.date=el.value||today();render();return;
     case 'semName':if(el.value.trim())s.name=el.value.trim();else el.value=s.name;break;
-    case 'semBaseDate':s.baseDate=el.value;render();return;
     case 'semStart':s.start=el.value;break;
     case 'semEnd':s.end=el.value;break;
     case 'semMode':s.mode=el.value;render();return;
     case 'semTarget':{var v=parseInt(el.value,10);if(!isNaN(v))s.target=Math.max(1,Math.min(100,v));el.value=s.target;break;}
     case 'subName':{var x=subOf(s,id);if(x){if(el.value.trim())x.name=el.value.trim();else el.value=x.name;}break;}
     case 'subTarget':{var x2=subOf(s,id);if(x2)x2.target=el.value===''?null:int(el.value,1,100);break;}
-    case 'subBaseA':{var x3=subOf(s,id);if(x3)x3.baseA=int(el.value,0,9999);break;}
-    case 'subBaseH':{var x4=subOf(s,id);if(x4)x4.baseH=int(el.value,0,9999);break;}
+    case 'subBaseA':{var x3=subOf(s,id);if(x3){x3.baseA=int(el.value,0,9999);stampBase(x3);}break;}
+    case 'subBaseH':{var x4=subOf(s,id);if(x4){x4.baseH=int(el.value,0,9999);stampBase(x4);}break;}
     case 'tt':{var w=el.dataset.wd;s.tt[w]=s.tt[w]||{};s.tt[w][id]=int(el.value,0,9);el.value=s.tt[w][id];break;}
   }
   save();
