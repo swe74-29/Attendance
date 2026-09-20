@@ -489,7 +489,7 @@ function vSems(){
     '<h2>Back up and move devices</h2><p class="hint" style="margin-bottom:12px">Your data is saved in this browser on this device. To use it on another device, copy the backup code here and paste it into Margin there.</p>'+
     '<div class="acts" style="margin-top:0"><button class="btn" data-act="showBackup">'+(ui.backup?'Hide backup code':'Show backup code')+'</button></div>';
   if(ui.backup)html+='<div style="margin-top:10px"><textarea id="bk" readonly aria-label="Backup code">'+esc(JSON.stringify(S))+'</textarea><div class="acts"><button class="btn" data-act="copyBackup">Copy backup code</button></div></div>';
-  html+='<div style="margin-top:16px"><label>Restore from a backup code<textarea id="imp" placeholder="Paste a backup code here"></textarea></label><div class="acts"><button class="btn" data-act="importBackup">'+(ui.armed==='import'?'Tap again to replace all data':'Restore backup')+'</button></div></div>';
+  html+='<div style="margin-top:16px"><label>Restore from a backup code<textarea id="imp" placeholder="Paste a backup code here">'+esc(ui.impText||'')+'</textarea></label><div class="acts"><button class="btn" data-act="importBackup">'+(ui.armed==='import'?'Tap again to replace all data':'Restore backup')+'</button></div></div>';
   return html;
 }
 
@@ -635,12 +635,12 @@ function act(a,d){
       break;
     }
     case 'importBackup':{
-      var raw=document.getElementById('imp').value.trim();
+      var ta2=document.getElementById('imp');if(ta2&&ta2.value.trim())ui.impText=ta2.value.trim();var raw=ui.impText||'';
       var o=null;try{o=JSON.parse(raw);}catch(e){}
       if(!o||!Array.isArray(o.sems)){toast('That does not look like a Margin backup code.');break;}
       arm('import',function(){
         o.sems.forEach(fixSem);S=o;if(!S.sems.some(function(x){return x.id===S.cur;}))S.cur=S.sems[0]?S.sems[0].id:null;
-        ui.tab='overview';render();toast('Backup restored.');
+        ui.impText='';ui.tab='overview';render();toast('Backup restored.');
       });
       break;
     }
