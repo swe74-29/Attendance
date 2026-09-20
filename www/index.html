@@ -680,5 +680,27 @@ render();
 })();
 </script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+<script>
+(function(){
+  if(!/^https?:$/.test(location.protocol)||/(^|\.)localhost$/.test(location.hostname))return;
+  var base=null,busy=false;
+  function hash(t){var h=5381,i;for(i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return h;}
+  function typing(){var a=document.activeElement;return !!a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);}
+  function check(){
+    if(busy)return;busy=true;
+    fetch(location.pathname,{cache:'no-cache'}).then(function(r){return r.ok?r.text():null;}).then(function(t){
+      busy=false;if(t===null)return;
+      var h=hash(t);
+      if(base===null){base=h;return;}
+      if(h===base||typing())return;
+      try{var last=+sessionStorage.getItem('margin.reload')||0;if(Date.now()-last<20000)return;sessionStorage.setItem('margin.reload',String(Date.now()));}catch(e){}
+      location.reload();
+    }).catch(function(){busy=false;});
+  }
+  window.addEventListener('load',function(){check();setInterval(check,45000);});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)check();});
+  window.addEventListener('online',check);
+})();
+</script>
 </body>
 </html>

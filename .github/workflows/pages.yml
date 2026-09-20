@@ -3,11 +3,6 @@ name: Deploy Margin web app
 # Runs by itself on every push to main that touches the app.
 on:
   push:
-    branches: [main]
-    paths:
-      - "www/**"
-      - "app-icon.png"
-      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
