@@ -5,6 +5,7 @@
   "description": "Margin: attendance tracker for college students (Android + desktop)",
   "engines": { "node": ">=22" },
   "scripts": {
+    "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "android:add": "cap add android",
