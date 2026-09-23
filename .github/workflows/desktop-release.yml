@@ -1,12 +1,12 @@
 name: Release Windows app (auto-updating)
 
-# Every push that changes the app builds a signed installer and publishes it
-# as a GitHub Release. Installed copies find it when they start and update themselves.
 on:
   push:
     branches: ["**"]
     paths:
-      - "www/**"
+      - "src/**"
+      - "public/**"
+      - "index.html"
       - "src-tauri/**"
       - "package.json"
       - ".github/workflows/desktop-release.yml"
@@ -24,22 +24,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-
       - uses: dtolnay/rust-toolchain@stable
-
       - run: npm install
-
       - name: Set the app version to 1.0.<run number>
         shell: bash
         env:
           RUN: ${{ github.run_number }}
         run: |
           node -e "const fs=require('fs');const f='src-tauri/tauri.conf.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='1.0.'+process.env.RUN;fs.writeFileSync(f,JSON.stringify(j,null,2));"
-
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,4 +47,3 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: --bundles nsis
-          

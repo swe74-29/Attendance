@@ -4,42 +4,27 @@
   "version": "1.0.0",
   "identifier": "com.margin.attendance",
   "build": {
-    "frontendDist": "../www"
+    "frontendDist": "../www",
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173"
   },
   "app": {
     "windows": [
-      {
-        "label": "main",
-        "title": "Margin",
-        "width": 1100,
-        "height": 780,
-        "minWidth": 380,
-        "minHeight": 600,
-        "resizable": true
-      }
+      { "label": "main", "title": "Margin", "width": 1100, "height": 780, "minWidth": 380, "minHeight": 600, "resizable": true }
     ],
-    "security": {
-      "csp": null
-    }
+    "security": { "csp": null }
   },
   "bundle": {
     "active": true,
     "targets": "all",
     "createUpdaterArtifacts": true,
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg5QzZEM0U3NjEzMzZCRUUKUldUdWF6Tmg1OVBHaVpLNGdhRXpJT1pEK1k5emtseHY3SVhBMkpQdXF3cHJVSHptdXhQZXdHWGcK",
-      "endpoints": [
-        "https://github.com/swe74-29/Attendance/releases/latest/download/latest.json"
-      ]
+      "pubkey": "PASTE_YOUR_PUBLIC_KEY_HERE",
+      "endpoints": ["https://github.com/swe74-29/Attendance/releases/latest/download/latest.json"]
     }
   }
 }

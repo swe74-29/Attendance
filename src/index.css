@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+body { @apply bg-paper text-ink font-sans dark:bg-paper-dark dark:text-ink-dark; }
+
+@layer components {
+  .btn {
+    @apply min-h-10 rounded-lg border border-line dark:border-line-dark bg-surface dark:bg-surface-dark px-3.5 py-2 font-semibold;
+  }
+  .btn-pri {
+    @apply min-h-10 rounded-lg border border-rose bg-rose px-3.5 py-2 font-semibold text-paper dark:text-paper-dark;
+  }
+  .input {
+    @apply w-full min-h-10 rounded-lg border border-line dark:border-line-dark bg-surface dark:bg-surface-dark px-2.5 py-2;
+  }
+  .label {
+    @apply block text-sm font-semibold text-ink2 dark:text-ink2-dark;
+  }
+  .link {
+    @apply bg-transparent text-rose underline cursor-pointer;
+  }
+  .opt {
+    @apply flex gap-2.5 items-start px-3 py-2.5 border border-line dark:border-line-dark rounded-lg mt-2 font-normal cursor-pointer text-ink dark:text-ink-dark;
+  }
+  .opt input { @apply w-auto min-h-0 mt-1; }
+  .opt:has(input:checked) { @apply border-rose bg-line/40 dark:bg-line-dark/40; }
+  .pageTitle { @apply font-display text-4xl md:text-5xl font-extrabold mb-3; }
+  .sectionTitle { @apply font-display text-2xl font-bold mt-7 mb-2.5; }
+  .pill {
+    @apply inline-block text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap;
+  }
+  .pill-safe { @apply bg-good-bg text-good dark:bg-good-bgdark dark:text-good-dark; }
+  .pill-partial { @apply bg-edge-bg text-edge dark:bg-edge-bgdark dark:text-edge-dark; }
+  .pill-no { @apply bg-bad-bg text-bad dark:bg-bad-bgdark dark:text-bad-dark; }
+  .pill-none { @apply bg-line dark:bg-line-dark text-ink2 dark:text-ink2-dark; }
+  .chip {
+    @apply inline-block text-xs px-2 py-0.5 rounded-md bg-line dark:bg-line-dark mr-1.5 mb-1.5;
+  }
+}
